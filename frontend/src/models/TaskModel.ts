@@ -26,6 +26,39 @@ export const RootStore = types
     addUser: (user: Instance<typeof User>) => {
       self.users.push(user);
     },
+    deleteTask: flow(function* (taskId: number) {
+      self.tasks = castToSnapshot(
+        self.tasks.filter((task) => task.id !== taskId)
+      );
+
+      // 故意写成同步删除. 体现同步
+      // try {
+      //   const response = yield fetch(`/api/tasks/${taskId}`, {
+      //     method: "DELETE",
+      //   });
+      //   if (!response.ok) {
+      //     throw new Error("Failed to delete task");
+      //   }
+      // } catch (err) {
+      //   console.error("Delete failed", err);
+      // }
+    }),
+    deleteUser: flow(function* (userId: number) {
+      self.users = castToSnapshot(
+        self.users.filter((user) => user.id !== userId)
+      );
+      // 故意写成同步删除. 体现同步
+      // try {
+      //   const response = yield fetch(`/api/users/${userId}`, {
+      //     method: "DELETE",
+      //   });
+      //   if (!response.ok) {
+      //     throw new Error("Failed to delete user");
+      //   }
+      // } catch (err) {
+      //   console.error("Delete failed", err);
+      // }
+    }),
     // 异步action
     fetchTasks: flow(function* () {
       try {
@@ -57,6 +90,7 @@ export const RootStore = types
         if (!response.ok) {
           throw new Error("Failed to create task");
         }
+        self.tasks.push(task);
       } catch (err) {
         console.error("Post failed", err);
       }
@@ -73,30 +107,32 @@ export const RootStore = types
         if (!response.ok) {
           throw new Error("Failed to create user");
         }
+        self.users.push(user);
       } catch (err) {}
     }),
-    deleteTask: flow(function* (taskId: number) {
+    updateTask: flow(function* (
+      task: Instance<typeof Task>,
+      completed: boolean
+    ) {
+      self.tasks = castToSnapshot(
+        self.tasks.map((t) => (t.id === task.id ? { ...task, completed } : t))
+      );
       try {
-        const response = yield fetch(`/api/tasks/${taskId}`, {
-          method: "DELETE",
+        const response = yield fetch(`/api/tasks/${task.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(task),
         });
         if (!response.ok) {
-          throw new Error("Failed to delete task");
+          throw new Error("Failed to update task");
         }
+        self.tasks = castToSnapshot(
+          self.tasks.map((t) => (t.id === task.id ? task : t))
+        );
       } catch (err) {
-        console.error("Delete failed", err);
-      }
-    }),
-    deleteUser: flow(function* (userId: number) {
-      try {
-        const response = yield fetch(`/api/users/${userId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) {
-          throw new Error("Failed to delete user");
-        }
-      } catch (err) {
-        console.error("Delete failed", err);
+        console.error("Update failed", err);
       }
     }),
   }))

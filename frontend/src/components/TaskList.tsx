@@ -31,13 +31,33 @@ const TaskList: React.FC = observer(() => {
             completed: false,
             userId: userId,
         };
-        store.addUser(newUser);
-        store.addTask(newTask);
         await store.postUser(newUser);
         await store.postTask(newTask);
 
         setUserId(1);
         setNewTaskTitle('');
+    };
+
+    const handleDeleteUser = async (id: number) => {
+        store.deleteUser(id);
+        try {
+            const response = await fetch(`/api/users/${id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                throw new Error("Failed to delete user");
+            }
+        } catch (err) {
+            console.error("Delete failed", err);
+        } finally {
+            await reload();
+        }
+    };
+
+    const handleSwitch = async (id: number) => {
+        const task = store.tasks.find((task) => task.id === id);
+        if (!task) return;
+        await store.updateTask(task,!task.completed);
     };
     return (
         <div>
@@ -58,8 +78,9 @@ const TaskList: React.FC = observer(() => {
 
             <ul>
                 {store.tasks.map((task: TaskInstance) => (
-                    <li key={task.id}>
-                        {task.title} - {task.completed ? '已完成' : '未完成'}
+                    <li key={task.id} >
+                        {task.title}
+                        <button onClick={() => handleSwitch(task.id)}>{task.completed ? '已完成' : '未完成'}</button>
                     </li>
                 ))}
             </ul>
@@ -70,10 +91,7 @@ const TaskList: React.FC = observer(() => {
                 {store.users.map((user: UserInstance) => (
                     <li key={user.id}>
                         {user.name}
-                        <button onClick={async () => {
-                            await store.deleteUser(user.id);
-                            await reload();
-                        }}>del</button>
+                        <button onClick={() => handleDeleteUser(user.id)}>del</button>
                     </li>
                 ))}
             </ul>
