@@ -1,4 +1,4 @@
-import { types, flow, castToSnapshot, type Instance } from "mobx-state-tree";
+import { types, flow, castToSnapshot, type Instance, t } from "mobx-state-tree";
 
 export const Task = types.model("Task", {
   id: types.identifierNumber,
@@ -23,9 +23,10 @@ export const RootStore = types
     addTask: (task: Instance<typeof Task>) => {
       self.tasks.push(task);
     },
-
+    addUser: (user: Instance<typeof User>) => {
+      self.users.push(user);
+    },
     // 异步action
-
     fetchTasks: flow(function* () {
       try {
         const response = yield fetch("/api/tasks");
@@ -33,6 +34,69 @@ export const RootStore = types
         self.tasks = castToSnapshot(tasks);
       } catch (err) {
         console.error("Fetch failed", err);
+      }
+    }),
+    fetchUsers: flow(function* () {
+      try {
+        const response = yield fetch("/api/users");
+        const users = yield response.json();
+        self.users = castToSnapshot(users);
+      } catch (err) {
+        console.error("Fetch failed", err);
+      }
+    }),
+    postTask: flow(function* (task: Instance<typeof Task>) {
+      try {
+        const response = yield fetch("/api/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(task),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to create task");
+        }
+      } catch (err) {
+        console.error("Post failed", err);
+      }
+    }),
+    postUser: flow(function* (user: Instance<typeof User>) {
+      try {
+        const response = yield fetch("/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(user),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to create user");
+        }
+      } catch (err) {}
+    }),
+    deleteTask: flow(function* (taskId: number) {
+      try {
+        const response = yield fetch(`/api/tasks/${taskId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to delete task");
+        }
+      } catch (err) {
+        console.error("Delete failed", err);
+      }
+    }),
+    deleteUser: flow(function* (userId: number) {
+      try {
+        const response = yield fetch(`/api/users/${userId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to delete user");
+        }
+      } catch (err) {
+        console.error("Delete failed", err);
       }
     }),
   }))
