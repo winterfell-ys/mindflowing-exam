@@ -28,24 +28,9 @@ export const RootStore = types
 
     fetchTasks: flow(function* () {
       try {
-        //   const response = yield fetch("/api/tasks")
-        //   const tasks = yield response.json()
-        yield new Promise((resolve) => setTimeout(resolve, 1000));
-        const data = [
-          {
-            id: 1,
-            title: "Task 1",
-            completed: false,
-            userId: 1,
-          },
-          {
-            id: 2,
-            title: "Task 2",
-            completed: true,
-            userId: 1,
-          },
-        ];
-        self.tasks = castToSnapshot(data);
+        const response = yield fetch("/api/tasks");
+        const tasks = yield response.json();
+        self.tasks = castToSnapshot(tasks);
       } catch (err) {
         console.error("Fetch failed", err);
       }
